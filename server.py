@@ -35,8 +35,3 @@ def read_root():
 def read_status():
     logger.info("Status endpoint was accessed")
     return {"status": "Server is running"}
-
-@app.get("/status")
-def read_status():
-    logger.info("Status endpoint was accessed")
-    return {"status": "Server is running"}
