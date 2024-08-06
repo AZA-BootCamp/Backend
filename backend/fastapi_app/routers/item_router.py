@@ -1,7 +1,7 @@
 # 아이템 관련 엔드포인트를 위한 라우터
 from fastapi import APIRouter, HTTPException
-from ..models import Item
-from ..crud import create_item, get_items, get_item, update_item, delete_item
+from models import Item
+from crud import create_item, get_items, get_item, update_item, delete_item
 
 router = APIRouter()
 

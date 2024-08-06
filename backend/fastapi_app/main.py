@@ -1,10 +1,10 @@
 # FastAPI 앱의 진입점
 from fastapi import FastAPI
-from .routers import item_router
+# from routers import item_router
 
 app = FastAPI()
 
-app.include_router(item_router.router)
+# app.include_router(item_router.router)
 
 @app.get("/")
 async def read_root():

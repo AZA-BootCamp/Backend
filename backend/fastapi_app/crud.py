@@ -1,6 +1,6 @@
 # 데이터베이스 상호작용을 위한 기본적인 CRUD 함수 정의
-from .database import db
-from .models import Item
+from database import db
+from models import Item
 
 def create_item(item: Item):
     db.get_collection('items').insert_one(item.dict())
