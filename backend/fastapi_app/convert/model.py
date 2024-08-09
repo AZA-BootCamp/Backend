@@ -4,7 +4,7 @@ import mediapipe as mp
 import torch
 from scipy.optimize import minimize
 import os
-
+ 
 num_betas = 10
 
 # Mediapipe Pose 모델 설정
