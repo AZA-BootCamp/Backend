@@ -8,7 +8,8 @@ user_data_store = {
     "gender": None,
     "height": None,
     "weight": None,
-    "brand": None
+    "brand": None,
+    "category":None,
 }
 
 class UserDataRequest(BaseModel):
@@ -16,6 +17,7 @@ class UserDataRequest(BaseModel):
     height: float
     weight: float
     brand: str
+    category: str
 
 @router.post("/save-user-data")
 async def save_user_data(request: UserDataRequest):
@@ -25,6 +27,7 @@ async def save_user_data(request: UserDataRequest):
     user_data_store["height"] = request.height
     user_data_store["weight"] = request.weight
     user_data_store["brand"] = request.brand
+    user_data_store["category"] = request.category
     return {"message": "User data saved successfully"}
 
 @router.get("/get-user-data")
