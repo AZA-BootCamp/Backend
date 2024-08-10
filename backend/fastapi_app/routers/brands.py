@@ -7,7 +7,7 @@ router = APIRouter()
 @router.get("/brands")
 async def get_brands():
     # 사용 가능한 모든 브랜드 목록을 생성
-    all_brands = set(feedback_store["여성"].keys()).union(feedback_store["남성"].keys())
+    all_brands = set(feedback_store["female"].keys()).union(feedback_store["male"].keys())
     
     return list(all_brands)
 

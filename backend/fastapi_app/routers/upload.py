@@ -9,18 +9,22 @@ UPLOAD_DIR = "uploaded_files"
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
+global uploaded_file_paths
+uploaded_file_paths = []
 
 @router.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
-    if not os.path.exists(UPLOAD_DIR):
-        os.makedirs(UPLOAD_DIR)
 
     for file in files:
         file_location = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_location, "wb+") as file_object:
             file_object.write(file.file.read())
+        uploaded_file_paths.append(file_location)
+    
+    print("Uploaded file paths:", uploaded_file_paths)  # 디버깅을 위한 로그 추가
 
-    return {"info": "files uploaded successfully"}
+
+    return {"info": "files uploaded successfully", "files": uploaded_file_paths}
 
 @router.get("/files")
 async def list_files():
@@ -29,7 +33,6 @@ async def list_files():
 
 @router.delete("/delete/{file_name}")
 async def delete_file(file_name: str):
-    file_name = unquote(file_name)  # URL 디코딩
     file_path = os.path.join(UPLOAD_DIR, file_name)
     if os.path.exists(file_path):
         os.remove(file_path)

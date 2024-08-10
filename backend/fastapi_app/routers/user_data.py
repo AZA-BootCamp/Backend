@@ -14,7 +14,7 @@ user_data_store = {
 
 # 피드백 데이터 저장소
 feedback_store = {
-    "여성": {
+    "female": {
         "폴로랄프로렌": {
             "반팔": {"커요": "3%", "보통이에요": "95%", "작아요": "2%"},
             "긴팔": {"커요": "6%", "보통이에요": "93%", "작아요": "1%"},
@@ -60,7 +60,7 @@ feedback_store = {
             "바지": {"커요": "5%", "보통이에요": "95%"}
         },
     },
-    "남성": {
+    "male": {
         "폴로랄프로렌": {
             "반팔": {"커요": "3%", "보통이에요": "92%", "작아요": "5%"},
             "긴팔": {"커요": "20%", "보통이에요": "75%", "작아요": "5%"},
@@ -125,7 +125,7 @@ class UserDataRequest(BaseModel):
 
 @router.post("/save-user-data")
 async def save_user_data(request: UserDataRequest):
-    if request.gender not in ["남성", "여성"]:
+    if request.gender not in ["male", "female"]:
         raise HTTPException(status_code=400, detail="Invalid gender")
     user_data_store["gender"] = request.gender
     user_data_store["height"] = request.height
