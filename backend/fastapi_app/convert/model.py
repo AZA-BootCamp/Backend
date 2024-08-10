@@ -1,11 +1,15 @@
+from fastapi import APIRouter, HTTPException
 import cv2
 import numpy as np
 import mediapipe as mp
 import torch
 from scipy.optimize import minimize
 import os
+import joblib
  
 num_betas = 10
+# 타겟 이름 리스트
+target_names = ['arm_length', 'inseam', 'outseam', 'chest_length', 'waist_length', 'hip_length', 'shoulder_distance']
 
 # Mediapipe Pose 모델 설정
 mp_pose = mp.solutions.pose
@@ -184,3 +188,38 @@ def calculate_circumference(vertices, indices):
     avg_radius = np.mean(distances)
     circumference = 2 * np.pi * avg_radius
     return circumference * 100  # cm 단위로 변환
+
+def calculate_final_measurements(measurements):
+    height = measurements.get('height', 0)
+    weight = measurements.get('weight', 0)
+    chest_circumference = measurements.get('chest_circumference', 0)
+    waist_circumference = measurements.get('waist_circumference', 0)
+    inseam = measurements.get('inseam', 0)
+    outseam = measurements.get('outseam', 0)
+    arm_length = measurements.get('arm_length', 0)
+    hip_circumference = measurements.get('hip_circumference', 0)
+    shoulder_length = measurements.get('shoulder_length', 0)
+    
+    # 새로운 측정값 배열 생성 (형식에 맞춰 배열을 구성해야 함)
+    new_measurements = np.array([
+        height, weight, arm_length, inseam, outseam,
+        chest_circumference, waist_circumference, hip_circumference, shoulder_length
+    ]).reshape(1, -1)
+
+    predicted_actual_measurements = {}
+    
+    for i, target_name in enumerate(target_names):
+        try:
+            model_path = f"/Users/heejin/Downloads/Backend/backend/fastapi_app/model/prediction/model_{target_name}.pkl"
+            print(f"Loading model from {model_path} for target {target_name}")
+            model = joblib.load(model_path)
+            print(f"Predicting {target_name} with input: {new_measurements}")
+            predicted_value = model.predict(new_measurements)[0]
+            print(f"Prediction for {target_name}: {predicted_value}")
+            predicted_actual_measurements[target_name] = predicted_value
+        except Exception as e:
+            print(f"Error loading model or predicting for target {target_name}: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error loading model or predicting for target {target_name}: {str(e)}")
+
+    return predicted_actual_measurements
+
