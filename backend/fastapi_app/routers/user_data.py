@@ -151,4 +151,9 @@ async def get_user_feedback():
     if feedback_data is None:
         raise HTTPException(status_code=404, detail="Feedback data not found for the user's data")
 
-    return feedback_data
+    # 피드백 데이터와 함께 브랜드 및 카테고리를 반환
+    return {
+        "feedback": feedback_data,
+        "brand": user_data['brand'],
+        "category": user_data['category']
+    }

@@ -190,8 +190,8 @@ def calculate_circumference(vertices, indices):
     return circumference * 100  # cm 단위로 변환
 
 def calculate_final_measurements(measurements):
-    height = measurements.get('height', 0)
-    weight = measurements.get('weight', 0)
+    height = measurements.get('height',0)
+    weight = measurements.get('weight',0)
     chest_circumference = measurements.get('chest_circumference', 0)
     waist_circumference = measurements.get('waist_circumference', 0)
     inseam = measurements.get('inseam', 0)
