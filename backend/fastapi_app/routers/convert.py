@@ -3,7 +3,9 @@ import os
 import torch
 import smplx
 import numpy as np
+import subprocess
 from convert.model import Camera, process_image, get_camera_matrices, triangulate_points, augment_data, adjust_loss_weights_for_bmi, smplify, calculate_body_measurements, calculate_circumference, calculate_final_measurements
+from convert.visualize import initialize_pose_estimation_model, process_image_with_pifuhd
 from .upload import uploaded_file_paths
 from .user_data import user_data_store
 
@@ -45,11 +47,11 @@ async def predict():
         weights = adjust_loss_weights_for_bmi(bmi)
         
         # SMPL 모델 경로 
-        if(gender == "female"):
+        if gender == "female":
             smpl_model_path = "/Users/heejin/Downloads/Backend/backend/fastapi_app/model/smplx/SMPLX_FEMALE.pkl"
             print("Loading SMPL model from:", smpl_model_path)
             smpl_model = smplx.create(smpl_model_path, model_type='smplx', gender='female', ext='pkl')
-        elif(gender == "male"):
+        elif gender == "male":
             smpl_model_path = "/Users/heejin/Downloads/Backend/backend/fastapi_app/model/smplx/SMPLX_MALE.pkl"
             print("Loading SMPL model from:", smpl_model_path)
             smpl_model = smplx.create(smpl_model_path, model_type='smplx', gender='male', ext='pkl')
@@ -66,7 +68,6 @@ async def predict():
         # 최적화 수행
         optimized_params = smplify(np.concatenate(augmented_keypoints_3d), smpl_model, camera, initial_params, weights)
         print("Optimization complete:", optimized_params)
-
 
         # 최적화된 파라미터를 사용하여 최종 3D 모델 생성
         smpl_output = smpl_model(
@@ -100,21 +101,37 @@ async def predict():
          # 최근 measurements를 메모리에 저장
         recent_measurements["last"] = calculate_final_measurements(measurements)
 
+        def delete_files_with_rm(file_paths):
+            for file_path in file_paths:
+                if os.path.exists(file_path):
+                    try:
+                        subprocess.run(['rm', '-rf', file_path], check=True)
+                        print(f"Deleted file using rm -rf: {file_path}")
+                    except subprocess.CalledProcessError as e:
+                        print(f"Failed to delete {file_path} using rm -rf: {e}")
+                else:
+                    print(f"File not found: {file_path}")
+
+        initialize_pose_estimation_model()
+
+        # 3번째와 4번째 파일을 삭제
+        delete_files_with_rm(uploaded_file_paths1[2:])
+
+        # 삭제된 파일을 반영하여 리스트를 다시 업데이트
+        uploaded_file_paths1 = uploaded_file_paths1[:2]
+        print("Final files for PIFuHD processing:", uploaded_file_paths1)
+
+        # 업데이트된 리스트로 함수 호출
+        process_image_with_pifuhd()
+
         # 예측 결과를 반환
         return {"measurements": measurements}
-
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Model execution failed: {str(e)}")
 
     finally:
         # 입력 파일을 삭제
-        for file_path in uploaded_file_paths:
+        for file_path in uploaded_file_paths1:
             if os.path.exists(file_path):
                 os.remove(file_path)
-
-@router.get("/measurements")
-async def get_measurements():
-    if "last" not in recent_measurements:
-        raise HTTPException(status_code=404, detail="No measurements available. Please run a prediction first.")
-    
-    return recent_measurements["last"]
