@@ -72,10 +72,8 @@ def get_rect(net, images, height_size):
 
         np.savetxt(rect_path, np.array(rects), fmt='%d')
 
-def initialize_pose_estimation_model():
+def initialize_pose_estimation_model(image):
     try:
-        image_path = "/Users/heejin/Downloads/Backend/backend/fastapi_app/uploaded_files"
-        image = image_path[0]
         print(f"Initializing pose estimation model with image: {image}")
         checkpoint_path = '/Users/heejin/Downloads/Backend/backend/fastapi_app/model/lightweight_human/checkpoint_iter_370000.pth'
         

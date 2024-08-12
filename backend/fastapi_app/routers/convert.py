@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 import os
 import torch
 import smplx
+import glob
 import numpy as np
 import subprocess
 from convert.model import Camera, process_image, get_camera_matrices, triangulate_points, augment_data, adjust_loss_weights_for_bmi, smplify, calculate_body_measurements, calculate_circumference, calculate_final_measurements
@@ -56,6 +58,7 @@ async def predict():
             print("Loading SMPL model from:", smpl_model_path)
             smpl_model = smplx.create(smpl_model_path, model_type='smplx', gender='male', ext='pkl')
         
+        
         # 초기 파라미터 설정
         initial_params = {
             'betas': torch.randn((1, 10)),  # 무작위 초기화 대신 정규분포 초기화
@@ -90,7 +93,10 @@ async def predict():
 
         measurements.update({
             'id': [os.path.basename(file_path) for file_path in uploaded_file_paths],
-            'sex': 'female',
+            'height': height_cm,
+            'weight':weight_kg,
+            'gender': gender,
+            'bmi': bmi,
             'chest_circumference': calculate_circumference(vertices, chest_indices),
             'waist_circumference': calculate_circumference(vertices, waist_indices),
             'thigh_circumference': calculate_circumference(vertices, thigh_indices),
@@ -100,7 +106,7 @@ async def predict():
 
          # 최근 measurements를 메모리에 저장
         recent_measurements["last"] = calculate_final_measurements(measurements)
-
+        
         def delete_files_with_rm(file_paths):
             for file_path in file_paths:
                 if os.path.exists(file_path):
@@ -111,27 +117,51 @@ async def predict():
                         print(f"Failed to delete {file_path} using rm -rf: {e}")
                 else:
                     print(f"File not found: {file_path}")
-
-        initialize_pose_estimation_model()
+        
+        initialize_pose_estimation_model(uploaded_file_paths[0])
 
         # 3번째와 4번째 파일을 삭제
-        delete_files_with_rm(uploaded_file_paths1[2:])
+        delete_files_with_rm(uploaded_file_paths[2:])
 
         # 삭제된 파일을 반영하여 리스트를 다시 업데이트
-        uploaded_file_paths1 = uploaded_file_paths1[:2]
+        uploaded_file_paths1 = uploaded_file_paths[:2]
         print("Final files for PIFuHD processing:", uploaded_file_paths1)
 
         # 업데이트된 리스트로 함수 호출
         process_image_with_pifuhd()
 
         # 예측 결과를 반환
-        return {"measurements": measurements}
+        return {"measurements": recent_measurements["last"]}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Model execution failed: {str(e)}")
-
     finally:
         # 입력 파일을 삭제
-        for file_path in uploaded_file_paths1:
+        for file_path in uploaded_file_paths:
             if os.path.exists(file_path):
                 os.remove(file_path)
+
+@router.get("/measurements")
+async def get_measurements():
+    if "last" not in recent_measurements:
+        raise HTTPException(status_code=404, detail="No measurements available. Please run a prediction first.")
+    
+    return recent_measurements["last"]
+
+@router.get("/get-obj-file")
+async def get_obj_file():
+    obj_folder_path = "/Users/heejin/Downloads/Backend/backend/fastapi_app/model/pifuhd/results/pifuhd_final/recon/"
+    
+    # .obj 파일을 찾기 위해 glob을 사용
+    obj_files = glob.glob(os.path.join(obj_folder_path, "*.obj"))
+    
+    if not obj_files:
+        raise HTTPException(status_code=404, detail="No OBJ files found in the specified directory")
+
+    # 가장 최근에 수정된 파일을 찾음
+    obj_file_path = max(obj_files, key=os.path.getmtime)
+
+    if not os.path.exists(obj_file_path):
+        raise HTTPException(status_code=404, detail="OBJ file not found")
+
+    return FileResponse(obj_file_path)
