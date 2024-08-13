@@ -140,6 +140,8 @@ async def predict():
         for file_path in uploaded_file_paths:
             if os.path.exists(file_path):
                 os.remove(file_path)
+        # 업로드된 파일 경로 리스트 초기화
+        uploaded_file_paths.clear()
 
 @router.get("/measurements")
 async def get_measurements():

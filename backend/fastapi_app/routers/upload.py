@@ -14,6 +14,7 @@ uploaded_file_paths = []
 
 @router.post("/upload")
 async def upload_files(files: List[UploadFile] = File(...)):
+    
 
     for file in files:
         file_location = os.path.join(UPLOAD_DIR, file.filename)
