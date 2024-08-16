@@ -1,3 +1,4 @@
+'''
 import subprocess
 import sys
 import pkg_resources
@@ -30,14 +31,15 @@ def install_requirements():
         subprocess.check_call([sys.executable, "-m", "pip", "install", "torch"])
 
 install_requirements()
-
+'''
 # FastAPI 앱의 진입점
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from routers import brands, user_data, upload, convert
+# from fastapi.middleware.cors import CORSMiddleware
+# from routers import brands, user_data, upload, convert
+from routers import recommend, measurement
 
 app = FastAPI()
-
+'''
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:8000", "http://ec2-3-34-94-30.ap-northeast-2.compute.amazonaws.com:3000/"],  # React 개발 서버 주소
@@ -48,8 +50,14 @@ app.add_middleware(
 
 app.include_router(brands.router)
 app.include_router(user_data.router)
+
 app.include_router(upload.router, prefix="/api")
 app.include_router(convert.router)
+'''
+
+app.include_router(recommend.router)
+app.include_router(measurement.router)
+
 
 @app.get("/")
 async def read_root():
