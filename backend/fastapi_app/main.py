@@ -34,7 +34,7 @@ install_requirements()
 # FastAPI 앱의 진입점
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import brands, user_data, upload, convert
+from routers import brands, user_data, upload, convert, ml_prediction, chattingBot
 
 app = FastAPI()
 
@@ -50,6 +50,8 @@ app.include_router(brands.router)
 app.include_router(user_data.router)
 app.include_router(upload.router, prefix="/api")
 app.include_router(convert.router)
+app.include_router(ml_prediction.router)
+app.include_router(chattingBot.router)
 
 @app.get("/")
 async def read_root():
