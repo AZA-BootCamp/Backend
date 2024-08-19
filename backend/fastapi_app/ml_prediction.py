@@ -1,10 +1,15 @@
+from sklearn.ensemble import RandomForestClassifier
 import os
-import pickle
+import numpy as np
+import joblib
 from fastapi import HTTPException
+from backend.fastapi_app.model.train_model import CustomSVMClassifier
 
 class MLModelPredictor:
     def __init__(self, gender: str, category: str, brand: str):
         self.model_name = self.get_model_name(gender, category, brand)
+        if self.model_name is None:
+            raise HTTPException(status_code=400, detail="No valid model name found.")
         self.model_path = self.get_model_path(self.model_name)
         self.model = self.load_model()
 
@@ -18,8 +23,6 @@ class MLModelPredictor:
                 return 'women_pants_nike_model.pkl'
             elif brand == 'Tommy hilfiger':
                 return 'women_pants_tommy_model.pkl'
-            else:
-                raise HTTPException(status_code=400, detail=f"No model available for brand {brand}")
         elif gender == 'female' and category == '긴팔':
             if brand == '아디다스':
                 return 'woman_long_shirt_adidas_model.pkl'
@@ -37,27 +40,9 @@ class MLModelPredictor:
                 return 'woman_long_shirt_sl_model.pkl'
             elif brand == 'Tommy hilfiger':
                 return 'woman_long_shirt_tommy_model.pkl'
-            else:
-                raise HTTPException(status_code=400, detail=f"No model available for brand {brand}")
         elif gender == 'female' and category == '반팔':
             if brand == '아디다스':
-                return 'woman_short_shirt_adidas_model.pkl'
-            elif brand == '캘빈클라인':
-                return 'woman_short_shirt_ck_model.pkl'
-            elif brand == 'kenzo':
-                return 'woman_short_shirt_kenzo_model.pkl'
-            elif brand == '메종키츠네':
-                return 'woman_short_shirt_mk_model.pkl'
-            elif brand == '나이키':
-                return 'woman_short_shirt_nike_model.pkl'
-            elif brand == '폴로랄프로렌':
-                return 'woman_short_shirt_polo_model.pkl'
-            elif brand == 'saint laurent':
-                return 'woman_short_shirt_sl_model.pkl'
-            elif brand == 'Tommy hilfiger':
-                return 'woman_short_shirt_tommy_model.pkl'
-            else:
-                raise HTTPException(status_code=400, detail=f"No model available for brand {brand}")
+                return 'test.pkl'  # 변경된 모델명으로 설정
         elif gender == 'male' and category == '바지':
             if brand == '폴로랄프로렌':
                 return 'man_pants_polo_model.pkl'
@@ -69,8 +54,6 @@ class MLModelPredictor:
                 return 'men_pants_nike_model.pkl'
             elif brand == 'Tommy hilfiger':
                 return 'men_pants_tommy_model.pkl'
-            else:
-                raise HTTPException(status_code=400, detail=f"No model available for brand {brand}")
         elif gender == 'male' and category == '긴팔':
             if brand == '아디다스':
                 return 'man_long_shirt_adidas_model.pkl'
@@ -88,8 +71,6 @@ class MLModelPredictor:
                 return 'man_long_shirt_sl_model.pkl'
             elif brand == 'Tommy hilfiger':
                 return 'man_long_shirt_tommy_model.pkl'
-            else:
-                raise HTTPException(status_code=400, detail=f"No model available for brand {brand}")
         elif gender == 'male' and category == '반팔':
             if brand == '아디다스':
                 return 'man_short_shirt_adidas_model.pkl'
@@ -107,13 +88,11 @@ class MLModelPredictor:
                 return 'man_short_shirt_sl_model.pkl'
             elif brand == 'Tommy hilfiger':
                 return 'man_short_shirt_tommy_model.pkl'
-            else:
-                raise HTTPException(status_code=400, detail=f"No model available for brand {brand}")
         else:
-            raise HTTPException(status_code=400, detail="No suitable model found for the given gender and category")
+            return None  # 모델 이름을 찾지 못하면 None을 반환
 
     def get_model_path(self, model_name: str) -> str:
-        base_path = '/Users/minkyukang/KSeb Project(Backend)/Backend/backend/fastapi_app/model/ml_prediction'  # 실제 경로로 수정
+        base_path = '/Users/minkyukang/KSeb Project(Backend)/Backend/backend/fastapi_app/model/ml_prediction'
         model_path = os.path.join(base_path, model_name)
         if not os.path.exists(model_path):
             raise HTTPException(status_code=404, detail=f"Model {model_name} not found at {model_path}")
@@ -121,22 +100,20 @@ class MLModelPredictor:
 
     def load_model(self):
         try:
-            with open(self.model_path, 'rb') as file:
-                model = pickle.load(file)
-                print(f"Model loaded successfully from {self.model_path}")
-                return model
+            model = joblib.load(self.model_path)
+            print(f"Model loaded successfully from {self.model_path}")
+            return model
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to load model from {self.model_path}: {str(e)}")
 
     def predict(self, input_data):
         try:
-            # 예측 수행
             prediction = self.model.predict(input_data)
             return prediction
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Model prediction failed: {str(e)}")
 
-# FastAPI 엔드포인트에서 사용할 수 있는 예시 함수
+
 def predict_clothing_size(gender, category, brand, **kwargs):
     predictor = MLModelPredictor(gender, category, brand)
 
@@ -154,7 +131,6 @@ def predict_clothing_size(gender, category, brand, **kwargs):
     else:
         raise HTTPException(status_code=400, detail="Invalid category")
 
-    # 예측 수행
     predicted_size = predictor.predict(input_data)
     
     return {"predicted_clothing_size": predicted_size[0]}

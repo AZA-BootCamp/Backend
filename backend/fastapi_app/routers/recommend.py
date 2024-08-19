@@ -1,23 +1,29 @@
 from fastapi import APIRouter, HTTPException
-from ml_prediction import predict_clothing_size
+from pydantic import BaseModel
+from backend.fastapi_app.model.ml_prediction import predict_clothing_size
 
 # APIRouter 인스턴스 생성
 router = APIRouter()
 
-# 예측을 위한 POST 엔드포인트 정의 (하드코딩된 값 사용)
+# 최종 예측 결과를 저장할 변수
+predicted_clothing_size = None
+
+# 예측을 위한 POST 엔드포인트 정의
 @router.post("/predict-clothing-size/")
-async def predict_clothing_size_endpoint(
-    gender: str, 
-    category: str, 
-    brand: str
-):
+async def predict_clothing_size_endpoint():
     try:
+        global predicted_clothing_size  # 전역 변수로 설정
+        
         # 하드코딩된 입력값 설정
+        gender = "female"
+        category = "반팔"
+        brand = "아디다스"
+        
         if category == "바지":
             height = 170.0
             weight = 65.0
             bmi = 22.5
-            bmi_class = "normal"  # BMI 클래스에 문자열 값 사용
+            bmi_class = "normal"
             chest_length = 85.0
             inseam = 80.0
             outseam = 100.0
@@ -32,7 +38,7 @@ async def predict_clothing_size_endpoint(
         elif category == "긴팔" or category == "반팔":
             height = 165.0
             weight = 60.0
-            bmi_class = "overweight"  # BMI 클래스에 문자열 값 사용
+            bmi_class = "overweight"
             waist_length = 75.0
             hip = 90.0
             inseam = 80.0
@@ -46,6 +52,7 @@ async def predict_clothing_size_endpoint(
         else:
             raise HTTPException(status_code=400, detail="Invalid category")
 
+        predicted_clothing_size = result["predicted_clothing_size"]
         return result
     except HTTPException as e:
         raise e
@@ -53,21 +60,9 @@ async def predict_clothing_size_endpoint(
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 # GET 요청을 처리하는 엔드포인트 추가
-@router.get("/predict-clothing-size/")
-async def get_clothing_size_example():
-    # 예시로 고정된 데이터를 반환
-    example_data = {
-        "message": "ML recommendation COMMUNICATION COMPLETE"
-    }
-    return example_data
-
-# 직접 실행을 위한 코드 추가
-if __name__ == "__main__":
-    # 하드코딩된 예시 값
-    gender = "female"
-    category = "반팔"
-    brand = "아디다스"
+@router.get("/get-predicted-clothing-size/")
+async def get_predicted_clothing_size():
+    if predicted_clothing_size is None:
+        raise HTTPException(status_code=404, detail="No prediction available. Please run a prediction first.")
     
-    # 예측 결과 확인
-    result = predict_clothing_size_endpoint(gender, category, brand)
-    print(result)
+    return {"predicted_clothing_size": predicted_clothing_size}

@@ -36,9 +36,10 @@ install_requirements()
 from fastapi import FastAPI
 # from fastapi.middleware.cors import CORSMiddleware
 # from routers import brands, user_data, upload, convert
-from routers import recommend, measurement
+from .routers import recommend, measurement
 
 app = FastAPI()
+
 '''
 app.add_middleware(
     CORSMiddleware,
@@ -57,7 +58,6 @@ app.include_router(convert.router)
 
 app.include_router(recommend.router)
 app.include_router(measurement.router)
-
 
 @app.get("/")
 async def read_root():
